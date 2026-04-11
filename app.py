@@ -6,23 +6,36 @@ import psycopg2
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text  
 
+# ✅ NEW: import auth + extensions
+from app.extensions import bcrypt, jwt   # 🔥 ADDED
+from app.auth import auth_bp             # 🔥 ADDED
 
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-
 app = Flask(__name__)
+
+# 🔐 DB CONFIG
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# 🔐 JWT CONFIG (🔥 ADDED)
+app.config['JWT_SECRET_KEY'] = 'super-secret-key'
+
 from database.models import db  
 
+# 🔌 INIT EXTENSIONS
 db.init_app(app)
+bcrypt.init_app(app)   # 🔥 ADDED
+jwt.init_app(app)      # 🔥 ADDED
+
 CORS(app)
 
 from flask_migrate import Migrate
-
 migrate = Migrate(app, db)
+
+# 🔗 REGISTER AUTH ROUTES (🔥 VERY IMPORTANT)
+app.register_blueprint(auth_bp)   # 🔥 ADDED
 
 
 def get_connection():
@@ -39,7 +52,6 @@ def check():
 
 
 # TEST DB CONNECTION
-
 @app.route("/test-db")
 def test_db():
     try:
@@ -51,15 +63,15 @@ def test_db():
 
 
 # ORM TEST (SQLAlchemy)
-
 @app.route("/orm-test")
 def orm_test():
     try:
-        db.session.execute(text('SELECT 1'))   # ✅ FIXED
+        db.session.execute(text('SELECT 1'))
         return "ORM Connected ✅"
     except Exception as e:
         return str(e)
-        
+
+
 # Fibonacci API
 @app.route('/api/fibonacci')
 def fibonacci():
@@ -69,7 +81,8 @@ def fibonacci():
         a, b = b, a + b
     return jsonify({"result": a})
 
-# Tonelli (simple placeholder)
+
+# Tonelli placeholder
 @app.route('/api/verify', methods=['POST'])
 def verify():
     data = request.json
@@ -80,6 +93,9 @@ def verify():
         "n": n,
         "p": p
     })
+
+
+# HEALTH CHECK
 @app.route("/api/health")
 def health():
     return jsonify({
@@ -87,6 +103,8 @@ def health():
         "message": "API is running ✅"
     })
 
+
+# DB STATUS
 @app.route("/api/db/status")
 def db_status():
     try:
@@ -97,16 +115,17 @@ def db_status():
     except Exception as e:
         return jsonify({"error": str(e)})
 
+
+# SEED DATA
 @app.route("/api/seed")
 def seed_data():
     try:
         from database.models import User
 
-        
         if User.query.first():
             return {"message": "Data already exists ✅"}
 
-        # Insert sample users
+        # ⚠️ NOTE: මේ password hashed නෙවේ (test purpose)
         user1 = User(email="test1@example.com", password="123456")
         user2 = User(email="test2@example.com", password="123456")
 
@@ -118,7 +137,6 @@ def seed_data():
 
     except Exception as e:
         return {"error": str(e)}
-
 
 
 if __name__ == '__main__':
