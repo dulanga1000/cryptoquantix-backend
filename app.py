@@ -7,8 +7,8 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text  
 
 # ✅ NEW: import auth + extensions
-from app.extensions import bcrypt, jwt   # 🔥 ADDED
-from app.auth import auth_bp             # 🔥 ADDED
+from extensions import bcrypt, jwt
+from auth import auth_bp   
 
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")

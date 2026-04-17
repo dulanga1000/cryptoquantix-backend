@@ -1,6 +1,6 @@
 from flask import request, jsonify
-from app.auth import auth_bp
-from app.extensions import db
+from auth import auth_bp
+from extensions import db
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
@@ -8,8 +8,8 @@ from flask_jwt_extended import (
     get_jwt_identity
 )
 
-from app.auth.models import User
-from app.auth.utils import hash_password, check_password
+from auth.models import User
+from auth.utils import hash_password, check_password
 
 
 # 🔐 REGISTER
@@ -83,20 +83,20 @@ def me():
 def logout():
     return jsonify({"msg": "Logged out successfully"})
 
-# 🔁 REFRESH TOKEN
-@auth_bp.route('/refresh', methods=['POST'])
-@jwt_required(refresh=True)
-def refresh():
-    user_id = get_jwt_identity()
+# # 🔁 REFRESH TOKEN
+# @auth_bp.route('/refresh', methods=['POST'])
+# @jwt_required(refresh=True)
+# def refresh():
+#     user_id = get_jwt_identity()
 
-    new_access = create_access_token(identity=user_id)
+#     new_access = create_access_token(identity=user_id)
 
-    return jsonify({"access_token": new_access})
+#     return jsonify({"access_token": new_access})
 
 
-# 👤 GET CURRENT USER
-@auth_bp.route('/me', methods=['GET'])
-@jwt_required()
-def me():
-    user_id = get_jwt_identity()
-    return jsonify({"user_id": user_id})
+# # 👤 GET CURRENT USER
+# @auth_bp.route('/me', methods=['GET'])
+# @jwt_required()
+# def me():
+#     user_id = get_jwt_identity()
+#     return jsonify({"user_id": user_id})
