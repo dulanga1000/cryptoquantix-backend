@@ -29,14 +29,23 @@ source venv/bin/activate
 ---
 
 ## 📥 2. Install Dependencies
-
-Install all required packages:
+✅ Recommended (using requirements.txt)
+```bash
+pip install -r requirements.txt
+```
+⚠️ Alternative (manual install)
 
 ```bash
 pip install flask flask-cors python-dotenv psycopg2-binary flask-sqlalchemy flask-migrate flask-bcrypt flask-jwt-extended
 ```
 
----
+### 📝 Generate requirements.txt (for developers)
+
+If you install new packages, update the requirements file:
+```bash
+pip freeze > requirements.txt
+```
+This ensures all dependencies and their versions are saved for the project.
 
 ## 🗄️ 3. Apply Database Migrations
 
