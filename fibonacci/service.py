@@ -64,7 +64,9 @@ def compare_methods(n):
 
     return {
         "n": n,
+        "dp_result": dp_result,
         "dp_time": dp_time,
+        "matrix_result": matrix_result,
         "matrix_time": matrix_time
     }
 #  CORE LOGIC (Trading Levels & Ratios)
@@ -95,12 +97,12 @@ def calculate_dynamic_price_levels(high_price, low_price, n):
     price_diff = high_price - low_price
     
     return {
-        "high_0": round(high_price, 2),
-        "sell_23_6": round(high_price - (price_diff * ratios["23.6%"]), 2),
-        "sell_38_2": round(high_price - (price_diff * ratios["38.2%"]), 2),
-        "hold_50_0": round(high_price - (price_diff * ratios["50.0%"]), 2),
-        "buy_61_8": round(high_price - (price_diff * ratios["61.8%"]), 2),
-        "low_100": round(low_price, 2)
+        "high_0": round(high_price, 3),
+        "sell_23_6": round(high_price - (price_diff * ratios["23.6%"]), 3),
+        "sell_38_2": round(high_price - (price_diff * ratios["38.2%"]), 3),
+        "hold_50_0": round(high_price - (price_diff * ratios["50.0%"]), 3),
+        "buy_61_8": round(high_price - (price_diff * ratios["61.8%"]), 3),
+        "low_100": round(low_price, 3)
     }
 
 
@@ -125,14 +127,14 @@ def generate_signals(high_price, low_price, current_price, n=50, sensitivity_per
     distance_to_sell = abs(current_price - sell_level)
 
     # 3. Create a Dynamic Threshold (Scales automatically for any coin)
-    threshold = current_price * (sensitivity_percent / 100)
+    buffer_zone = current_price * (sensitivity_percent / 100)
 
     # 4. Decision Logic
-    if distance_to_buy <= threshold:
+    if distance_to_buy <= buffer_zone:
         action = "BUY"
         message = f"Price is at a strong Support zone (${buy_level}). This is an optimal BUY opportunity."
 
-    elif distance_to_sell <= threshold:
+    elif distance_to_sell <= buffer_zone:
         action = "SELL"
         message = f"Price has reached a Resistance zone (${sell_level}). Good time to TAKE PROFIT (SELL)."
 
@@ -146,9 +148,9 @@ def generate_signals(high_price, low_price, current_price, n=50, sensitivity_per
         "action": action,
         "buy_level": buy_level,
         "sell_level": sell_level,
-        "distance_to_buy": round(distance_to_buy, 2),
-        "distance_to_sell": round(distance_to_sell, 2),
-        "active_threshold": round(threshold, 2),
+        "distance_to_buy": round(distance_to_buy, 3),
+        "distance_to_sell": round(distance_to_sell, 3),
+        "buffer_zone": round(buffer_zone, 3),
         "levels": levels, # Includes all levels for chart plotting
         "message": message
     }
@@ -165,10 +167,10 @@ if __name__ == "__main__":
     print("--- Testing CryptoQuantix Bot ---")
     
     
-    test_high = 70000
-    test_low = 60000
+    test_high = 800000
+    test_low = 600000
     
-    test_current = 63800 
+    test_current = 650000
 
 
     result = generate_signals(
