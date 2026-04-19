@@ -6,14 +6,19 @@ import psycopg2
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text  
 
+
 # ✅ NEW: import auth + extensions
 from extensions import bcrypt, jwt
 from auth import auth_bp   
+
+# for fibonacci
+from fibonacci import fibonacci_bp
 
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 app = Flask(__name__)
+
 
 # 🔐 DB CONFIG
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
@@ -36,6 +41,8 @@ migrate = Migrate(app, db)
 
 # 🔗 REGISTER AUTH ROUTES (🔥 VERY IMPORTANT)
 app.register_blueprint(auth_bp)   # 🔥 ADDED
+app.register_blueprint(fibonacci_bp) 
+
 
 
 def get_connection():
@@ -72,14 +79,14 @@ def orm_test():
         return str(e)
 
 
-# Fibonacci API
-@app.route('/api/fibonacci')
-def fibonacci():
-    n = int(request.args.get('n'))
-    a, b = 0, 1
-    for _ in range(n):
-        a, b = b, a + b
-    return jsonify({"result": a})
+# # Fibonacci API
+# @app.route('/api/fibonacci')
+# def fibonacci():
+#     n = int(request.args.get('n'))
+#     a, b = 0, 1
+#     for _ in range(n):
+#         a, b = b, a + b
+#     return jsonify({"result": a})
 
 
 # Tonelli placeholder
