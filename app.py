@@ -14,6 +14,8 @@ from auth import auth_bp
 # for fibonacci
 from fibonacci import fibonacci_bp
 
+from portfolio.routes import portfolio_bp
+
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -42,7 +44,7 @@ migrate = Migrate(app, db)
 # 🔗 REGISTER AUTH ROUTES (🔥 VERY IMPORTANT)
 app.register_blueprint(auth_bp)   # 🔥 ADDED
 app.register_blueprint(fibonacci_bp) 
-
+app.register_blueprint(portfolio_bp)
 
 
 def get_connection():
