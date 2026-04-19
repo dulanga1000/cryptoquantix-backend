@@ -8,7 +8,7 @@ from flask_jwt_extended import (
     get_jwt_identity
 )
 
-from auth.models import User
+from database.models import User
 from auth.utils import hash_password, check_password
 
 
@@ -82,21 +82,3 @@ def me():
 @auth_bp.route('/logout', methods=['POST'])
 def logout():
     return jsonify({"msg": "Logged out successfully"})
-
-# # 🔁 REFRESH TOKEN
-# @auth_bp.route('/refresh', methods=['POST'])
-# @jwt_required(refresh=True)
-# def refresh():
-#     user_id = get_jwt_identity()
-
-#     new_access = create_access_token(identity=user_id)
-
-#     return jsonify({"access_token": new_access})
-
-
-# # 👤 GET CURRENT USER
-# @auth_bp.route('/me', methods=['GET'])
-# @jwt_required()
-# def me():
-#     user_id = get_jwt_identity()
-#     return jsonify({"user_id": user_id})

@@ -6,48 +6,52 @@ import psycopg2
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text  
 
-
-# ✅ NEW: import auth + extensions
+# ✅ import auth + extensions
 from extensions import bcrypt, jwt
 from auth import auth_bp   
-
-# for fibonacci
 from fibonacci import fibonacci_bp
+
+# 🔥 NEW: Import Member 3's Cryptography Blueprint
+from tonelli_shanks import tonelli_bp
+
+from market_data import market_bp
+
+from user_analytics import analytics_bp
+from reports import reports_bp
 
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 app = Flask(__name__)
 
-
 # 🔐 DB CONFIG
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# 🔐 JWT CONFIG (🔥 ADDED)
+# 🔐 JWT CONFIG
 app.config['JWT_SECRET_KEY'] = 'super-secret-key'
 
 from database.models import db  
 
 # 🔌 INIT EXTENSIONS
 db.init_app(app)
-bcrypt.init_app(app)   # 🔥 ADDED
-jwt.init_app(app)      # 🔥 ADDED
-
+bcrypt.init_app(app)   
+jwt.init_app(app)      
 CORS(app)
 
 from flask_migrate import Migrate
 migrate = Migrate(app, db)
 
-# 🔗 REGISTER AUTH ROUTES (🔥 VERY IMPORTANT)
-app.register_blueprint(auth_bp)   # 🔥 ADDED
+# 🔗 REGISTER BLUEPRINTS (🔥 VERY IMPORTANT)
+app.register_blueprint(auth_bp)   
 app.register_blueprint(fibonacci_bp) 
-
-
+app.register_blueprint(tonelli_bp) # 🔥 NEW: Register Tonelli-Shanks 
+app.register_blueprint(market_bp)
+app.register_blueprint(analytics_bp)
+app.register_blueprint(reports_bp)
 
 def get_connection():
     return psycopg2.connect(DATABASE_URL)
-
 
 @app.route("/")
 def home():
@@ -56,7 +60,6 @@ def home():
 @app.route("/check")
 def check():
     return "NEW CODE LOADED ✅"
-
 
 # TEST DB CONNECTION
 @app.route("/test-db")
@@ -68,7 +71,6 @@ def test_db():
     except Exception as e:
         return str(e)
 
-
 # ORM TEST (SQLAlchemy)
 @app.route("/orm-test")
 def orm_test():
@@ -78,30 +80,6 @@ def orm_test():
     except Exception as e:
         return str(e)
 
-
-# # Fibonacci API
-# @app.route('/api/fibonacci')
-# def fibonacci():
-#     n = int(request.args.get('n'))
-#     a, b = 0, 1
-#     for _ in range(n):
-#         a, b = b, a + b
-#     return jsonify({"result": a})
-
-
-# Tonelli placeholder
-@app.route('/api/verify', methods=['POST'])
-def verify():
-    data = request.json
-    n = data.get('n')
-    p = data.get('p')
-    return jsonify({
-        "message": "Verification logic here",
-        "n": n,
-        "p": p
-    })
-
-
 # HEALTH CHECK
 @app.route("/api/health")
 def health():
@@ -109,7 +87,6 @@ def health():
         "status": "ok",
         "message": "API is running ✅"
     })
-
 
 # DB STATUS
 @app.route("/api/db/status")
@@ -122,8 +99,7 @@ def db_status():
     except Exception as e:
         return jsonify({"error": str(e)})
 
-
-# SEED DATA
+# SEED DATA (Updated to use 'username' instead of 'email')
 @app.route("/api/seed")
 def seed_data():
     try:
@@ -133,8 +109,8 @@ def seed_data():
             return {"message": "Data already exists ✅"}
 
         # ⚠️ NOTE: මේ password hashed නෙවේ (test purpose)
-        user1 = User(email="test1@example.com", password="123456")
-        user2 = User(email="test2@example.com", password="123456")
+        user1 = User(username="testuser1", password="123456")
+        user2 = User(username="testuser2", password="123456")
 
         db.session.add(user1)
         db.session.add(user2)
@@ -144,7 +120,6 @@ def seed_data():
 
     except Exception as e:
         return {"error": str(e)}
-
 
 if __name__ == '__main__':
     print("THIS FILE IS RUNNING ✅")   
