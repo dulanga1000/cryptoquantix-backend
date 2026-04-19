@@ -5,6 +5,7 @@ import os
 import psycopg2
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text  
+from market_data.routes import market_bp
 
 
 # ✅ NEW: import auth + extensions
@@ -42,6 +43,7 @@ migrate = Migrate(app, db)
 # 🔗 REGISTER AUTH ROUTES (🔥 VERY IMPORTANT)
 app.register_blueprint(auth_bp)   # 🔥 ADDED
 app.register_blueprint(fibonacci_bp) 
+app.register_blueprint(market_bp, url_prefix="/api/market")
 
 
 
