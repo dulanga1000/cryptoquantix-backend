@@ -15,12 +15,13 @@ from fibonacci import fibonacci_bp
 from tonelli_shanks import tonelli_bp
 
 from market_data import market_bp
-
 from user_analytics import analytics_bp
 from reports import reports_bp
 
 load_dotenv()
-DATABASE_URL = os.getenv("DATABASE_URL")
+
+# 🔥 FIXED: Safely fetch the database URL from Azure's environment variables
+DATABASE_URL = os.getenv("DATABASE_URI") or os.getenv("DATABASE_URL")
 
 app = Flask(__name__)
 
@@ -29,7 +30,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # 🔐 JWT CONFIG
-app.config['JWT_SECRET_KEY'] = 'super-secret-key'
+# 🔥 FIXED: Fetch the secret key from Azure instead of hardcoding it!
+app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY", "super-secret-key")
 
 from database.models import db  
 
@@ -108,7 +110,7 @@ def seed_data():
         if User.query.first():
             return {"message": "Data already exists ✅"}
 
-        # ⚠️ NOTE: මේ password hashed නෙවේ (test purpose)
+        # ⚠️ NOTE: test passwords are stored in plaintext for testing purposes only. DO NOT USE IN PRODUCTION!
         user1 = User(username="testuser1", password="123456")
         user2 = User(username="testuser2", password="123456")
 
