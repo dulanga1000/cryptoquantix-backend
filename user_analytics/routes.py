@@ -10,14 +10,18 @@ from .service import calculate_portfolio_performance
 @analytics_bp.route('/watchlist', methods=['GET'])
 @jwt_required()
 def get_watchlist():
-    user_id = get_jwt_identity()
+    # 🔥 FIXED: Convert string token ID back to integer for the database
+    user_id = int(get_jwt_identity()) 
+    
     items = Watchlist.query.filter_by(user_id=user_id).all()
     return jsonify([{"id": i.id, "symbol": i.symbol} for i in items]), 200
 
 @analytics_bp.route('/watchlist', methods=['POST'])
 @jwt_required()
 def add_to_watchlist():
-    user_id = get_jwt_identity()
+    # 🔥 FIXED: Convert string token ID back to integer
+    user_id = int(get_jwt_identity()) 
+    
     data = request.get_json()
     symbol = data.get('symbol', '').upper()
     
@@ -37,7 +41,9 @@ def add_to_watchlist():
 @analytics_bp.route('/portfolio', methods=['GET'])
 @jwt_required()
 def get_portfolio():
-    user_id = get_jwt_identity()
+    # 🔥 FIXED: Convert string token ID back to integer
+    user_id = int(get_jwt_identity()) 
+    
     trades = Trade.query.filter_by(user_id=user_id).all()
     performance = calculate_portfolio_performance(trades)
     return jsonify(performance), 200
@@ -45,7 +51,9 @@ def get_portfolio():
 @analytics_bp.route('/portfolio/trade', methods=['POST'])
 @jwt_required()
 def add_trade():
-    user_id = get_jwt_identity()
+    # 🔥 FIXED: Convert string token ID back to integer
+    user_id = int(get_jwt_identity()) 
+    
     data = request.get_json()
     
     # 🔍 Debug: Print the exact data hitting the server
@@ -73,7 +81,7 @@ def add_trade():
 
         # 4. Save to database
         new_trade = Trade(
-            user_id=user_id,
+            user_id=user_id, # Safely passing the integer user_id
             symbol=raw_symbol,
             quantity=qty,
             buy_price=price
