@@ -4,14 +4,14 @@ from .service import get_live_price, get_historical_candles
 
 @market_bp.route('/price/<symbol>', methods=['GET'])
 def fetch_price(symbol):
-    price = get_live_price(symbol)
-    if price is None:
-        return jsonify({"error": f"Could not find price for {symbol}"}), 404
+    # 🔥 Now receives a full dictionary with price, change, volume, etc.
+    market_data = get_live_price(symbol)
     
-    return jsonify({
-        "symbol": symbol,
-        "price": price
-    }), 200
+    if market_data is None:
+        return jsonify({"error": f"Could not find market data for {symbol}"}), 404
+    
+    market_data["symbol"] = symbol
+    return jsonify(market_data), 200
 
 @market_bp.route('/candles/<symbol>', methods=['GET'])
 def fetch_candles(symbol):
