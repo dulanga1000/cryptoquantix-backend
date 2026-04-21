@@ -3,8 +3,6 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from . import analytics_bp
 from extensions import db
 from database.models import Watchlist, Trade
-
-# 🔥 IMPORTED get_current_price to handle the swap exchange rates
 from .service import calculate_portfolio_performance, get_current_price
 
 # --- WATCHLIST ROUTES ---
@@ -52,16 +50,17 @@ def add_trade():
 
     try:
         raw_symbol = str(data.get('symbol', '')).strip().upper()
+        # 🔥 Cast everything to native Python floats
         qty = float(data.get('quantity'))
         price = float(data.get('buy_price'))
         side = str(data.get('side', 'BUY')).upper()
-        cost = qty * price
+        cost = float(qty * price)
 
         usd_trades = Trade.query.filter_by(user_id=user_id, symbol='USD').all()
-        usd_balance = sum(t.quantity for t in usd_trades)
+        usd_balance = float(sum(t.quantity for t in usd_trades))
         
         crypto_trades = Trade.query.filter_by(user_id=user_id, symbol=raw_symbol).all()
-        crypto_balance = sum(t.quantity for t in crypto_trades)
+        crypto_balance = float(sum(t.quantity for t in crypto_trades))
 
         if side == 'BUY':
             if usd_balance < cost:
@@ -88,7 +87,7 @@ def add_trade():
     except Exception as e:
         return jsonify({"msg": f"Internal server error: {str(e)}"}), 500
 
-# 🔥 NEW: CRYPTO SWAP ROUTE (e.g. BTC -> SOL)
+# --- CRYPTO SWAP ROUTE ---
 @analytics_bp.route('/portfolio/swap', methods=['POST'])
 @jwt_required()
 def swap_crypto():
@@ -102,6 +101,7 @@ def swap_crypto():
     try:
         from_symbol = str(data.get('from_symbol', '')).strip().upper()
         to_symbol = str(data.get('to_symbol', '')).strip().upper()
+        # 🔥 Cast quantity to float
         qty = float(data.get('quantity'))
 
         if qty <= 0:
@@ -111,24 +111,24 @@ def swap_crypto():
 
         # 1. Check if user owns enough of the 'From' coin
         from_trades = Trade.query.filter_by(user_id=user_id, symbol=from_symbol).all()
-        from_balance = sum(t.quantity for t in from_trades)
+        from_balance = float(sum(t.quantity for t in from_trades))
 
         if from_balance < qty:
             return jsonify({"msg": f"Insufficient {from_symbol} balance for this swap."}), 400
 
-        # 2. Fetch Live Prices
-        from_price = get_current_price(from_symbol)
-        to_price = get_current_price(to_symbol)
+        # 2. Fetch Live Prices and strictly cast to float
+        from_price = float(get_current_price(from_symbol))
+        to_price = float(get_current_price(to_symbol))
 
         if from_price <= 0 or to_price <= 0:
             return jsonify({"msg": "Error fetching live market exchange rates."}), 500
 
         # 3. Calculate Exchange Math
-        usd_value = qty * from_price
-        receive_qty = usd_value / to_price
+        usd_value = float(qty * from_price)
+        receive_qty = float(usd_value / to_price)
 
         # 4. Double-Entry Ledger Execution
-        deduct_trade = Trade(user_id=user_id, symbol=from_symbol, quantity=-qty, buy_price=from_price)
+        deduct_trade = Trade(user_id=user_id, symbol=from_symbol, quantity=float(-qty), buy_price=from_price)
         add_trade = Trade(user_id=user_id, symbol=to_symbol, quantity=receive_qty, buy_price=to_price)
 
         db.session.add(deduct_trade)
@@ -141,4 +141,7 @@ def swap_crypto():
         }), 201
 
     except Exception as e:
-        return jsonify({"msg": f"Internal server error: {str(e)}"}), 500
+        # If it fails, print the full traceback to your server logs for debugging
+        import traceback
+        traceback.print_exc()
+        return jsonify({"msg": f"Database execution error: {str(e)}"}), 500

@@ -6,9 +6,10 @@ def get_current_price(symbol):
     try:
         ticker = yf.Ticker(symbol)
         data = ticker.history(period="1d")
-        return data['Close'].iloc[-1] if not data.empty else 0
+        # 🔥 FIXED: Cast the pandas/numpy value to a standard Python float
+        return float(data['Close'].iloc[-1]) if not data.empty else 0.0
     except:
-        return 0
+        return 0.0
 
 def calculate_portfolio_performance(trades):
     """Aggregates ledger trades and calculates true value and P&L."""
@@ -58,18 +59,18 @@ def calculate_portfolio_performance(trades):
         summary.append({
             "id": symbol,
             "symbol": symbol,
-            "quantity": round(qty, 6),
-            "buy_price": round(avg_buy_price, 2),
-            "current_price": round(current_p, 2),
-            "p_l": round(p_l, 2),
-            "p_l_percent": round((p_l / invested) * 100, 2) if invested > 0 else 0
+            "quantity": round(float(qty), 6),
+            "buy_price": round(float(avg_buy_price), 2),
+            "current_price": round(float(current_p), 2),
+            "p_l": round(float(p_l), 2),
+            "p_l_percent": round(float((p_l / invested) * 100), 2) if invested > 0 else 0.0
         })
 
     # 3. Return clean, separated data to React
     return {
         "assets": summary,
-        "usd_balance": round(usd_balance, 2),
-        "total_invested": round(total_invested, 2),
-        "crypto_value": round(crypto_value, 2),
-        "overall_p_l": round(crypto_value - total_invested, 2)
+        "usd_balance": round(float(usd_balance), 2),
+        "total_invested": round(float(total_invested), 2),
+        "crypto_value": round(float(crypto_value), 2),
+        "overall_p_l": round(float(crypto_value - total_invested), 2)
     }
