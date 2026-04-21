@@ -78,18 +78,37 @@ def add_trade():
         # 3. Explicitly convert to float
         qty = float(raw_qty)
         price = float(raw_price)
+        cost = qty * price
 
-        # 4. Save to database
-        new_trade = Trade(
-            user_id=user_id, # Safely passing the integer user_id
-            symbol=raw_symbol,
-            quantity=qty,
+        # 🔥 4. REAL WORLD LEDGER UPGRADE: Check USD Balance Before Buying
+        usd_trades = Trade.query.filter_by(user_id=user_id, symbol='USD').all()
+        usd_balance = sum(t.quantity for t in usd_trades)
+
+        if usd_balance < cost:
+            return jsonify({"msg": f"Insufficient funds. Trade costs ${cost:,.2f} but you only have ${usd_balance:,.2f} USD."}), 400
+
+        # 🔥 5. Double-Entry Execution (The Ledger Method)
+        # Add the new crypto asset
+        new_crypto_trade = Trade(
+            user_id=user_id, 
+            symbol=raw_symbol, 
+            quantity=qty, 
             buy_price=price
         )
-        db.session.add(new_trade)
+        
+        # Deduct the cost from their USD balance
+        usd_deduction = Trade(
+            user_id=user_id, 
+            symbol='USD', 
+            quantity=-cost, 
+            buy_price=1.0
+        )
+        
+        db.session.add(new_crypto_trade)
+        db.session.add(usd_deduction)
         db.session.commit()
         
-        return jsonify({"msg": "Trade recorded ✅", "symbol": raw_symbol}), 201
+        return jsonify({"msg": "Trade recorded successfully ✅", "symbol": raw_symbol}), 201
 
     except (ValueError, TypeError) as e:
         print(f"❌ CONVERSION ERROR: {str(e)}")
