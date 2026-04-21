@@ -8,7 +8,7 @@ from flask_jwt_extended import (
     get_jwt_identity
 )
 
-# 🔥 IMPORTED TRADE MODEL FOR THE FAUCET
+# 🔥 FIXED: Imported the Trade model so the Faucet doesn't crash
 from database.models import User, Trade
 from auth.utils import hash_password, check_password
 
@@ -30,18 +30,19 @@ def register():
     user = User(
         username=data['username'], 
         password=hashed,
-        full_name=data.get('fullName', ''), 
-        email=data.get('email', '')         
+        full_name=data.get('fullName', ''),
+        email=data.get('email', '')
     )
     db.session.add(user)
-    db.session.flush() # 🔥 Get the new user's ID before committing
+    db.session.flush() # 🔥 Get the user's new ID before committing
 
-    # 🔥 REAL WORLD FAUCET: Inject $10,000 USD Paper Money into the Ledger
+    # 🔥 THE FAUCET: Inject $10,000 USD Cash into the Ledger for new accounts
     initial_deposit = Trade(
         user_id=user.id,
         symbol='USD',
         quantity=10000.0,
-        buy_price=1.0
+        buy_price=1.0,
+        action='SYSTEM' # Marks this as a system deposit, not a user trade
     )
     db.session.add(initial_deposit)
     db.session.commit()
