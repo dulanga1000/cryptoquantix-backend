@@ -8,12 +8,11 @@ from flask_jwt_extended import (
     get_jwt_identity
 )
 
-# 🔥 FIXED: Imported the Trade model so the Faucet doesn't crash
 from database.models import User, Trade
 from auth.utils import hash_password, check_password
 
 
-# 🔐 REGISTER
+# REGISTER
 @auth_bp.route('/register', methods=['POST'])
 def register():
     data = request.json
@@ -34,15 +33,14 @@ def register():
         email=data.get('email', '')
     )
     db.session.add(user)
-    db.session.flush() # 🔥 Get the user's new ID before committing
+    db.session.flush() 
 
-    # 🔥 THE FAUCET: Inject $10,000 USD Cash into the Ledger for new accounts
     initial_deposit = Trade(
         user_id=user.id,
         symbol='USD',
         quantity=10000.0,
         buy_price=1.0,
-        action='SYSTEM' # Marks this as a system deposit, not a user trade
+        action='SYSTEM' 
     )
     db.session.add(initial_deposit)
     db.session.commit()
@@ -50,7 +48,7 @@ def register():
     return jsonify({"msg": "User registered successfully with $10,000 starting balance!"}), 201
 
 
-# 🔑 LOGIN
+# LOGIN
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.json
@@ -72,7 +70,7 @@ def login():
     return jsonify({"msg": "Invalid username or password"}), 401
 
 
-# 🔁 REFRESH TOKEN
+# REFRESH TOKEN
 @auth_bp.route('/refresh', methods=['POST'])
 @jwt_required(refresh=True)
 def refresh():
@@ -82,7 +80,7 @@ def refresh():
     return jsonify({"access_token": new_access})
 
 
-# 👤 GET CURRENT USER
+# GET CURRENT USER
 @auth_bp.route('/me', methods=['GET'])
 @jwt_required()
 def me():
@@ -100,7 +98,7 @@ def me():
     })
 
 
-# 🌐 GET ALL NETWORK USERS (For Transaction Dropdown)
+# GET ALL NETWORK USERS
 @auth_bp.route('/users', methods=['GET'])
 @jwt_required()
 def get_all_users():
@@ -113,7 +111,7 @@ def get_all_users():
         "full_name": u.full_name or u.username
     } for u in users]), 200
 
-# 🚪 LOGOUT
+# LOGOUT
 @auth_bp.route('/logout', methods=['POST'])
 def logout():
     return jsonify({"msg": "Logged out successfully"})

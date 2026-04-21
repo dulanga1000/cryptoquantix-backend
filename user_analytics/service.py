@@ -15,19 +15,16 @@ def calculate_portfolio_performance(trades):
     """Aggregates ledger trades and calculates true value and P&L."""
     portfolio_map = {}
     
-    # 🔥 Counters for UI
     buy_count = 0
     sell_count = 0
     swap_count = 0
     
-    # 🔥 NEW: We will store the raw transaction receipts here
     raw_history = []
 
     for trade in trades:
         sym = trade.symbol
         action = getattr(trade, 'action', 'SYSTEM') 
         
-        # 1. Tally the actions for the UI counters
         if action == 'BUY' and trade.quantity > 0 and sym != 'USD':
             buy_count += 1
         elif action == 'SELL' and trade.quantity < 0 and sym != 'USD':
@@ -35,8 +32,6 @@ def calculate_portfolio_performance(trades):
         elif action == 'SWAP' and trade.quantity > 0:
             swap_count += 1
 
-        # 🔥 2. Build the Transaction Receipt for the new Modal
-        # We ignore the negative USD deductions so the history looks clean to the user
         if sym != 'USD' or action == 'SYSTEM': 
             raw_history.append({
                 "id": trade.id,
@@ -48,20 +43,18 @@ def calculate_portfolio_performance(trades):
                 "timestamp": trade.timestamp.strftime("%b %d, %Y - %H:%M") if trade.timestamp else "N/A"
             })
 
-        # 3. Build the Ledger Cost Basis
         if sym not in portfolio_map:
             portfolio_map[sym] = {"quantity": 0.0, "invested": 0.0}
         
-        if trade.quantity > 0: # BUY
+        if trade.quantity > 0: 
             portfolio_map[sym]["quantity"] += trade.quantity
             portfolio_map[sym]["invested"] += (trade.buy_price * trade.quantity)
-        else: # SELL
+        else: 
             if portfolio_map[sym]["quantity"] > 0:
                 avg_price = portfolio_map[sym]["invested"] / portfolio_map[sym]["quantity"]
                 portfolio_map[sym]["quantity"] += trade.quantity 
                 portfolio_map[sym]["invested"] += (trade.quantity * avg_price)
 
-    # Sort history so newest trades appear at the top of the modal
     raw_history.sort(key=lambda x: x["id"], reverse=True)
 
     summary = []
@@ -69,7 +62,6 @@ def calculate_portfolio_performance(trades):
     crypto_value = 0.0
     usd_balance = 0.0
 
-    # 4. Calculate Live P&L
     for symbol, data in portfolio_map.items():
         if data["quantity"] <= 0.0001:  
             continue
@@ -108,5 +100,5 @@ def calculate_portfolio_performance(trades):
         "buy_count": buy_count,
         "sell_count": sell_count,
         "swap_count": swap_count,
-        "history": raw_history # 🔥 NEW: Send the raw trades to the frontend!
+        "history": raw_history 
     }
