@@ -28,6 +28,4 @@ class Trade(db.Model):
     quantity = db.Column(db.Float, nullable=False)
     buy_price = db.Column(db.Float, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # 🔥 NEW: Tracks if this was a BUY, SELL, or SWAP
-    action = db.Column(db.String(20), nullable=False, default="SYSTEM")
+    action = db.Column(db.String(20), nullable=True, default="SYSTEM")
