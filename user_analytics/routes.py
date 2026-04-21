@@ -65,7 +65,6 @@ def add_trade():
             if usd_balance < cost:
                 return jsonify({"msg": f"Insufficient USD. Trade costs ${cost:,.2f}, your balance is ${usd_balance:,.2f}"}), 400
             
-            # 🔥 ACTION RECORDED AS 'side' (BUY)
             new_crypto_trade = Trade(user_id=user_id, symbol=raw_symbol, quantity=qty, buy_price=price, action=side)
             usd_trade = Trade(user_id=user_id, symbol='USD', quantity=-cost, buy_price=1.0, action=side)
             
@@ -73,7 +72,6 @@ def add_trade():
             if crypto_balance < qty:
                 return jsonify({"msg": f"Insufficient {raw_symbol}. Trying to sell {qty}, but you only own {crypto_balance}"}), 400
             
-            # 🔥 ACTION RECORDED AS 'side' (SELL)
             new_crypto_trade = Trade(user_id=user_id, symbol=raw_symbol, quantity=-qty, buy_price=price, action=side)
             usd_trade = Trade(user_id=user_id, symbol='USD', quantity=cost, buy_price=1.0, action=side)
         else:
@@ -124,7 +122,6 @@ def swap_crypto():
         usd_value = float(qty * from_price)
         receive_qty = float(usd_value / to_price)
 
-        # 🔥 ACTION RECORDED AS 'SWAP'
         deduct_trade = Trade(user_id=user_id, symbol=from_symbol, quantity=float(-qty), buy_price=from_price, action='SWAP')
         add_trade = Trade(user_id=user_id, symbol=to_symbol, quantity=receive_qty, buy_price=to_price, action='SWAP')
 

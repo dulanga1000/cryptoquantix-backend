@@ -6,36 +6,32 @@ import psycopg2
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text  
 
-# ✅ import auth + extensions
+# import auth + extensions
 from extensions import bcrypt, jwt
 from auth import auth_bp   
 from fibonacci import fibonacci_bp
-
-# 🔥 NEW: Import Member 3's Cryptography Blueprint
 from tonelli_shanks import tonelli_bp
-
 from market_data import market_bp
 from user_analytics import analytics_bp
 from reports import reports_bp
 
 load_dotenv()
 
-# 🔥 FIXED: Safely fetch the database URL from Azure's environment variables
+# Safely fetch the database URL from Azure's environment variables
 DATABASE_URL = os.getenv("DATABASE_URI") or os.getenv("DATABASE_URL")
 
 app = Flask(__name__)
 
-# 🔐 DB CONFIG
+# DB CONFIG
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# 🔐 JWT CONFIG
-# 🔥 FIXED: Fetch the secret key from Azure instead of hardcoding it!
+# JWT CONFIG
 app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY", "super-secret-key")
 
 from database.models import db  
 
-# 🔌 INIT EXTENSIONS
+# INIT EXTENSIONS
 db.init_app(app)
 bcrypt.init_app(app)   
 jwt.init_app(app)      
@@ -44,10 +40,10 @@ CORS(app)
 from flask_migrate import Migrate
 migrate = Migrate(app, db)
 
-# 🔗 REGISTER BLUEPRINTS (🔥 VERY IMPORTANT)
+# REGISTER BLUEPRINTS
 app.register_blueprint(auth_bp)   
 app.register_blueprint(fibonacci_bp) 
-app.register_blueprint(tonelli_bp) # 🔥 NEW: Register Tonelli-Shanks 
+app.register_blueprint(tonelli_bp) 
 app.register_blueprint(market_bp)
 app.register_blueprint(analytics_bp)
 app.register_blueprint(reports_bp)
@@ -101,7 +97,18 @@ def db_status():
     except Exception as e:
         return jsonify({"error": str(e)})
 
-# SEED DATA (Updated to use 'username' instead of 'email')
+# EMERGENCY AZURE DATABASE FIX ROUTE
+@app.route("/api/db/fix")
+def fix_db():
+    try:
+        db.session.execute(text("ALTER TABLE trades ADD COLUMN action VARCHAR(20) DEFAULT 'SYSTEM';"))
+        db.session.commit()
+        return jsonify({"status": "SUCCESS", "msg": "The 'action' column was successfully added to your Azure Database! Your app will now work."}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "NOTE", "msg": f"Column might already exist or error occurred: {str(e)}"}), 200
+
+# SEED DATA
 @app.route("/api/seed")
 def seed_data():
     try:
@@ -110,7 +117,6 @@ def seed_data():
         if User.query.first():
             return {"message": "Data already exists ✅"}
 
-        # ⚠️ NOTE: test passwords are stored in plaintext for testing purposes only. DO NOT USE IN PRODUCTION!
         user1 = User(username="testuser1", password="123456")
         user2 = User(username="testuser2", password="123456")
 
