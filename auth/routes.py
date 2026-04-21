@@ -8,7 +8,8 @@ from flask_jwt_extended import (
     get_jwt_identity
 )
 
-from database.models import User
+# 🔥 IMPORTED TRADE MODEL FOR THE FAUCET
+from database.models import User, Trade
 from auth.utils import hash_password, check_password
 
 
@@ -26,18 +27,26 @@ def register():
 
     hashed = hash_password(data['password'])
 
-    # 🔥 MODIFIED: Now we catch the email and fullName from the React frontend
-    # and save them to the database!
     user = User(
         username=data['username'], 
         password=hashed,
-        full_name=data.get('fullName', ''), # Captures 'fullName' from React
-        email=data.get('email', '')         # Captures 'email' from React
+        full_name=data.get('fullName', ''), 
+        email=data.get('email', '')         
     )
     db.session.add(user)
+    db.session.flush() # 🔥 Get the new user's ID before committing
+
+    # 🔥 REAL WORLD FAUCET: Inject $10,000 USD Paper Money into the Ledger
+    initial_deposit = Trade(
+        user_id=user.id,
+        symbol='USD',
+        quantity=10000.0,
+        buy_price=1.0
+    )
+    db.session.add(initial_deposit)
     db.session.commit()
 
-    return jsonify({"msg": "User registered successfully"}), 201
+    return jsonify({"msg": "User registered successfully with $10,000 starting balance!"}), 201
 
 
 # 🔑 LOGIN
@@ -51,7 +60,6 @@ def login():
     user = User.query.filter_by(username=data['username']).first()
 
     if user and check_password(user.password, data['password']):
-        # 🔥 FIXED: identity is explicitly cast to string
         access = create_access_token(identity=str(user.id))
         refresh = create_refresh_token(identity=str(user.id))
 
@@ -67,7 +75,7 @@ def login():
 @auth_bp.route('/refresh', methods=['POST'])
 @jwt_required(refresh=True)
 def refresh():
-    user_id = get_jwt_identity() # This will be a string
+    user_id = get_jwt_identity() 
     new_access = create_access_token(identity=str(user_id))
 
     return jsonify({"access_token": new_access})
@@ -77,14 +85,12 @@ def refresh():
 @auth_bp.route('/me', methods=['GET'])
 @jwt_required()
 def me():
-    # 🔥 FIXED: Convert the string identity back to an int for the database
     user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
 
     if not user:
         return jsonify({"msg": "User not found"}), 404
 
-    # 🔥 MODIFIED: Send the new details back to the frontend
     return jsonify({
         "id": user.id,
         "username": user.username,
@@ -98,7 +104,6 @@ def me():
 @jwt_required()
 def get_all_users():
     current_id = int(get_jwt_identity())
-    # Fetch all users EXCEPT the currently logged-in user
     users = User.query.filter(User.id != current_id).all()
     
     return jsonify([{
