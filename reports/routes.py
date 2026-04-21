@@ -4,6 +4,7 @@ from database.models import User, Trade
 from user_analytics.service import calculate_portfolio_performance
 from .service import generate_portfolio_pdf
 import os
+import traceback
 
 reports_bp = Blueprint('reports', __name__, url_prefix='/api/reports')
 
@@ -17,7 +18,7 @@ def download_portfolio_report():
     if not user:
         return jsonify({"msg": "User not found"}), 404
 
-    # 2. Gather their financial data using M5's existing logic
+    # 2. Gather their financial data 
     trades = Trade.query.filter_by(user_id=user_id).all()
     performance_data = calculate_portfolio_performance(trades)
 
@@ -33,5 +34,9 @@ def download_portfolio_report():
             mimetype='application/pdf'
         )
     except Exception as e:
-        print(f"PDF ERROR: {e}")
-        return jsonify({"msg": "Failed to generate PDF report"}), 500
+        # 🔥 Print the exact error to the python terminal so we can see what broke
+        print("====== PDF GENERATION FAILED ======")
+        traceback.print_exc()
+        print("===================================")
+        
+        return jsonify({"msg": f"Failed to generate PDF report: {str(e)}"}), 500
