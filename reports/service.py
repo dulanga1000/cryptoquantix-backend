@@ -23,10 +23,18 @@ def generate_portfolio_pdf(username, performance_data):
 
     pdf.set_font("Arial", '', 11)
     pdf.cell(0, 8, txt=f"Total Capital Invested: ${performance_data['total_invested']:,.2f}", ln=True)
-    pdf.cell(0, 8, txt=f"Current Market Value: ${performance_data['total_value']:,.2f}", ln=True)
+    
+    # 🔥 FIXED: Use crypto_value and usd_balance instead of total_value
+    pdf.cell(0, 8, txt=f"Current Crypto Value: ${performance_data['crypto_value']:,.2f}", ln=True)
+    pdf.cell(0, 8, txt=f"Available USD Cash: ${performance_data['usd_balance']:,.2f}", ln=True)
     
     p_l = performance_data['overall_p_l']
     pdf.cell(0, 8, txt=f"Net Profit / Loss: ${p_l:,.2f}", ln=True)
+    pdf.ln(5)
+
+    # 🔥 NEW: Output the Action Counts
+    pdf.set_font("Arial", 'I', 10)
+    pdf.cell(0, 8, txt=f"Total Trading Activity -> Buys: {performance_data.get('buy_count', 0)} | Sells: {performance_data.get('sell_count', 0)} | Swaps: {performance_data.get('swap_count', 0)}", ln=True)
     pdf.ln(10)
 
     # --- Table Header ---
@@ -46,7 +54,7 @@ def generate_portfolio_pdf(username, performance_data):
     # --- Table Rows (Data) ---
     pdf.set_font("Arial", '', 10)
     if not performance_data['assets']:
-        pdf.cell(sum(col_w), 10, "No assets currently held in portfolio.", border=1, align='C')
+        pdf.cell(sum(col_w), 10, "No crypto assets currently held in portfolio.", border=1, align='C')
         pdf.ln()
     else:
         for asset in performance_data['assets']:
@@ -57,7 +65,6 @@ def generate_portfolio_pdf(username, performance_data):
             pdf.ln()
 
     # --- Save to Temporary File ---
-    # We use a temp file so it doesn't clutter your server folder permanently
     temp_file = NamedTemporaryFile(delete=False, suffix=".pdf")
     pdf.output(temp_file.name)
     

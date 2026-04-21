@@ -50,7 +50,6 @@ def add_trade():
 
     try:
         raw_symbol = str(data.get('symbol', '')).strip().upper()
-        # 🔥 Cast everything to native Python floats
         qty = float(data.get('quantity'))
         price = float(data.get('buy_price'))
         side = str(data.get('side', 'BUY')).upper()
@@ -66,15 +65,17 @@ def add_trade():
             if usd_balance < cost:
                 return jsonify({"msg": f"Insufficient USD. Trade costs ${cost:,.2f}, your balance is ${usd_balance:,.2f}"}), 400
             
-            new_crypto_trade = Trade(user_id=user_id, symbol=raw_symbol, quantity=qty, buy_price=price)
-            usd_trade = Trade(user_id=user_id, symbol='USD', quantity=-cost, buy_price=1.0)
+            # 🔥 ACTION RECORDED AS 'side' (BUY)
+            new_crypto_trade = Trade(user_id=user_id, symbol=raw_symbol, quantity=qty, buy_price=price, action=side)
+            usd_trade = Trade(user_id=user_id, symbol='USD', quantity=-cost, buy_price=1.0, action=side)
             
         elif side == 'SELL':
             if crypto_balance < qty:
                 return jsonify({"msg": f"Insufficient {raw_symbol}. Trying to sell {qty}, but you only own {crypto_balance}"}), 400
             
-            new_crypto_trade = Trade(user_id=user_id, symbol=raw_symbol, quantity=-qty, buy_price=price)
-            usd_trade = Trade(user_id=user_id, symbol='USD', quantity=cost, buy_price=1.0)
+            # 🔥 ACTION RECORDED AS 'side' (SELL)
+            new_crypto_trade = Trade(user_id=user_id, symbol=raw_symbol, quantity=-qty, buy_price=price, action=side)
+            usd_trade = Trade(user_id=user_id, symbol='USD', quantity=cost, buy_price=1.0, action=side)
         else:
             return jsonify({"msg": "Invalid trade side."}), 400
 
@@ -101,7 +102,6 @@ def swap_crypto():
     try:
         from_symbol = str(data.get('from_symbol', '')).strip().upper()
         to_symbol = str(data.get('to_symbol', '')).strip().upper()
-        # 🔥 Cast quantity to float
         qty = float(data.get('quantity'))
 
         if qty <= 0:
@@ -109,27 +109,24 @@ def swap_crypto():
         if from_symbol == to_symbol:
             return jsonify({"msg": "Cannot swap the same asset."}), 400
 
-        # 1. Check if user owns enough of the 'From' coin
         from_trades = Trade.query.filter_by(user_id=user_id, symbol=from_symbol).all()
         from_balance = float(sum(t.quantity for t in from_trades))
 
         if from_balance < qty:
             return jsonify({"msg": f"Insufficient {from_symbol} balance for this swap."}), 400
 
-        # 2. Fetch Live Prices and strictly cast to float
         from_price = float(get_current_price(from_symbol))
         to_price = float(get_current_price(to_symbol))
 
         if from_price <= 0 or to_price <= 0:
             return jsonify({"msg": "Error fetching live market exchange rates."}), 500
 
-        # 3. Calculate Exchange Math
         usd_value = float(qty * from_price)
         receive_qty = float(usd_value / to_price)
 
-        # 4. Double-Entry Ledger Execution
-        deduct_trade = Trade(user_id=user_id, symbol=from_symbol, quantity=float(-qty), buy_price=from_price)
-        add_trade = Trade(user_id=user_id, symbol=to_symbol, quantity=receive_qty, buy_price=to_price)
+        # 🔥 ACTION RECORDED AS 'SWAP'
+        deduct_trade = Trade(user_id=user_id, symbol=from_symbol, quantity=float(-qty), buy_price=from_price, action='SWAP')
+        add_trade = Trade(user_id=user_id, symbol=to_symbol, quantity=receive_qty, buy_price=to_price, action='SWAP')
 
         db.session.add(deduct_trade)
         db.session.add(add_trade)
@@ -141,7 +138,6 @@ def swap_crypto():
         }), 201
 
     except Exception as e:
-        # If it fails, print the full traceback to your server logs for debugging
         import traceback
         traceback.print_exc()
         return jsonify({"msg": f"Database execution error: {str(e)}"}), 500

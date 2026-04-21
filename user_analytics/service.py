@@ -15,9 +15,24 @@ def calculate_portfolio_performance(trades):
     """Aggregates ledger trades and calculates true value and P&L."""
     portfolio_map = {}
     
+    # 🔥 Counters for UI and PDF
+    buy_count = 0
+    sell_count = 0
+    swap_count = 0
+    
     # 1. Build the Ledger Cost Basis
     for trade in trades:
         sym = trade.symbol
+        action = getattr(trade, 'action', 'SYSTEM') # Safely get action
+        
+        # Tally the actions (We only count the positive quantity leg of the trade to avoid double-counting)
+        if action == 'BUY' and trade.quantity > 0 and sym != 'USD':
+            buy_count += 1
+        elif action == 'SELL' and trade.quantity < 0 and sym != 'USD':
+            sell_count += 1
+        elif action == 'SWAP' and trade.quantity > 0:
+            swap_count += 1
+
         if sym not in portfolio_map:
             portfolio_map[sym] = {"quantity": 0.0, "invested": 0.0}
         
@@ -25,7 +40,6 @@ def calculate_portfolio_performance(trades):
             portfolio_map[sym]["quantity"] += trade.quantity
             portfolio_map[sym]["invested"] += (trade.buy_price * trade.quantity)
         else: # SELL
-            # Selling reduces the total quantity and the total invested amount proportionally
             if portfolio_map[sym]["quantity"] > 0:
                 avg_price = portfolio_map[sym]["invested"] / portfolio_map[sym]["quantity"]
                 portfolio_map[sym]["quantity"] += trade.quantity # trade.quantity is negative here
@@ -72,5 +86,8 @@ def calculate_portfolio_performance(trades):
         "usd_balance": round(float(usd_balance), 2),
         "total_invested": round(float(total_invested), 2),
         "crypto_value": round(float(crypto_value), 2),
-        "overall_p_l": round(float(crypto_value - total_invested), 2)
+        "overall_p_l": round(float(crypto_value - total_invested), 2),
+        "buy_count": buy_count,
+        "sell_count": sell_count,
+        "swap_count": swap_count
     }
