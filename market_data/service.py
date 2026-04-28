@@ -4,7 +4,7 @@ def get_live_price(symbol: str):
     """Fetches the current market price and 24h details for a given symbol."""
     try:
         ticker = yf.Ticker(symbol)
-        # 🔥 Fetch 2 days to calculate 24h change
+        #  Fetch 2 days to calculate 24h change
         data = ticker.history(period="2d")
         if data.empty:
             return None
