@@ -2,13 +2,9 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 import os
-import sys
 import psycopg2
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import text
-
-# Set higher limit for large integer string conversions
-sys.set_int_max_str_digits(20577)  
+from sqlalchemy import text  
 
 # import auth + extensions
 from extensions import bcrypt, jwt
