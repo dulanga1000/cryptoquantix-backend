@@ -4,7 +4,7 @@ from .service import get_live_price, get_historical_candles
 
 @market_bp.route('/price/<symbol>', methods=['GET'])
 def fetch_price(symbol):
-    # Now receives a full dictionary with price, change, volume, etc.
+    # 🔥 Now receives a full dictionary with price, change, volume, etc.
     market_data = get_live_price(symbol)
     
     if market_data is None:
